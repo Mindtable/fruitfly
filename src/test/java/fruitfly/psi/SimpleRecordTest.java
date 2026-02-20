@@ -7,19 +7,20 @@ import fruitfly.test.FruitflyTestCase;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class SimpleRecordTest extends FruitflyTestCase {
-  private static final Logger log = Logger.getInstance(SimpleRecordTest.class);
 
-  public void testSimple() {
-    var inputJava = getTestPsiJavaFile("SimpleRecordTestInput.java");
-    var outputText = getTestPsiTextFile("SimpleRecordTestOutput.txt");
+    private static final Logger log = Logger.getInstance(SimpleRecordTest.class);
 
-    var recordClass = inputJava.getClasses()[0];
-    WriteCommandAction.runWriteCommandAction(inputJava.getProject(), ()->{
-      BuilderGenerator.generateBuilderPattern(recordClass);
-    });
+    public void testSimple() {
+        var inputJava = getTestPsiJavaFile("fruitfly/psi/simple_record/SimpleRecordTestInput.java");
+        var outputText = getTestPsiTextFile("fruitfly/psi/simple_record/SimpleRecordTestOutput.txt");
 
-    log.info("generated: " + inputJava.getText());
-    assertThat(inputJava.getText()).isEqualTo(outputText.getText());
-  }
+        var recordClass = inputJava.getClasses()[0];
+        WriteCommandAction.runWriteCommandAction(inputJava.getProject(), () -> {
+            BuilderGenerator.generateBuilderPattern(recordClass);
+        });
+
+        log.info("generated: " + inputJava.getText());
+        assertThat(inputJava.getText()).isEqualTo(outputText.getText());
+    }
 
 }

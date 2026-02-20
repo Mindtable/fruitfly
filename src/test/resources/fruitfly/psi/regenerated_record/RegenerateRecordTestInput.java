@@ -1,4 +1,4 @@
-package fruitfly.psi;
+package fruitfly.psi.regenerated_record;
 
 /** record comment */
 public record RegenerateRecordTestInput(
@@ -31,10 +31,6 @@ public record RegenerateRecordTestInput(
     public Builder field1(String field1) {
       this.field1 = field1;
       return this;
-    }
-
-    public CommentedRecordTestInput build() {
-      return new CommentedRecordTestInput(this.field1);
     }
   }
 

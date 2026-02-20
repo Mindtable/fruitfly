@@ -1,4 +1,4 @@
-package fruitfly.psi;
+package fruitfly.psi.multiple_top_level_record;
 
 public class MultipleTopLevelTestInput{
 }

@@ -1,4 +1,4 @@
-package fruitfly.psi;
+package fruitfly.psi.nested_record;
 
 public class NestedRecordTestInput {
 

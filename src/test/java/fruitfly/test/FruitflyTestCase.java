@@ -7,49 +7,42 @@ import com.intellij.testFramework.fixtures.LightJavaCodeInsightFixtureTestCase;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public abstract class FruitflyTestCase
-  extends LightJavaCodeInsightFixtureTestCase
-{
+public abstract class FruitflyTestCase extends LightJavaCodeInsightFixtureTestCase {
 
-  @Override
-  protected void setUp() throws Exception {
-    super.setUp();
+    @Override
+    protected void tearDown() throws Exception {
+        super.tearDown();
+    }
+
+    @Override
+    protected void setUp() throws Exception {
+        super.setUp();
     /* I prefer my resource files to be right next to the test instead of in
      a separate hierarchy.  Makes refactoring tests and packages easier and
      looking up input/output data easier. */
-    myFixture.setTestDataPath("src/test/java");
-  }
+        myFixture.setTestDataPath("src/test/resources");
+    }
 
-  @Override
-  protected void tearDown() throws Exception {
-    super.tearDown();
-  }
+    public PsiJavaFile getTestPsiJavaFile(String filename) {
+        var file = myFixture.configureByFile(filename);
 
-  public String getPackagePath(){
-    return this.getClass().getPackage().getName().replace('.', '/');
-  }
+        assertThat(file).isNotNull();
+        assertThat(file).isInstanceOf(PsiJavaFile.class);
 
-  public PsiJavaFile getTestPsiJavaFile(String filename){
-    var file = myFixture.configureByFile(getPackagePath() + "/" + filename);
+        return (PsiJavaFile) file;
+    }
 
-    assertThat(file).isNotNull();
-    assertThat(file).isInstanceOf(PsiJavaFile.class);
+    public PsiPlainTextFile getTestPsiTextFile(String filename) {
+        var file = myFixture.configureByFile(filename);
 
-    return (PsiJavaFile) file;
-  }
+        assertThat(file).isNotNull();
+        assertThat(file).isInstanceOf(PsiPlainTextFile.class);
 
-  public PsiPlainTextFile getTestPsiTextFile(String filename){
-    var file = myFixture.configureByFile(getPackagePath() + "/" + filename);
+        return (PsiPlainTextFile) file;
+    }
 
-    assertThat(file).isNotNull();
-    assertThat(file).isInstanceOf(PsiPlainTextFile.class);
-
-    return (PsiPlainTextFile) file;
-  }
-
-  public PsiFile getTestPsiFile(String filename){
-    return myFixture.configureByFile(getPackagePath() + "/" + filename);
-  }
-
+    public PsiFile getTestPsiFile(String filename) {
+        return myFixture.configureByFile(filename);
+    }
 
 }

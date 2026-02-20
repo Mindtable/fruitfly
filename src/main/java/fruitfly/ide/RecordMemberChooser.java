@@ -14,67 +14,67 @@ import static java.util.Objects.requireNonNull;
 
 public class RecordMemberChooser {
 
-  /**
-   Displays the confirmation dialog where users can choose what fields to
-   generate.
-   */
-  public static List<String> chooseFieldNames(PsiClass recordClass) {
-    List<PsiFieldMember> members =
-      RecordMemberChooser.mapAllFieldMembers(recordClass);
+    /**
+     * Displays the confirmation dialog where users can choose what fields to
+     * generate.
+     */
+    public static List<String> chooseFieldNames(PsiClass recordClass) {
+        List<PsiFieldMember> members =
+            RecordMemberChooser.mapAllFieldMembers(recordClass);
 
-    MemberChooser<PsiFieldMember> chooser = new MemberChooser<>(
-      members.toArray(PsiFieldMember[]::new),
-      false, // allowEmptySelection
-      true,  // allowMultiSelection
-      recordClass.getProject(),
-      false // isInsertOverrideVisible
-    );
-    chooser.setCopyJavadocVisible(false);
-    chooser.selectElements(
-      members.stream().
-        filter(RecordMemberChooser::isDefaultSelection).
-        toArray(PsiFieldMember[]::new)
-    );
-    chooser.setTitle("Select Fields to Be Available in Builder");
+        MemberChooser<PsiFieldMember> chooser = new MemberChooser<>(
+            members.toArray(PsiFieldMember[]::new),
+            false, // allowEmptySelection
+            true,  // allowMultiSelection
+            recordClass.getProject(),
+            false // isInsertOverrideVisible
+        );
+        chooser.setCopyJavadocVisible(false);
+        chooser.selectElements(
+            members.stream().
+                filter(RecordMemberChooser::isDefaultSelection).
+                toArray(PsiFieldMember[]::new)
+        );
+        chooser.setTitle("Select Fields to Be Available in Builder");
 
-    chooser.show();
-    if( !chooser.isOK() ){
-      return emptyList();
+        chooser.show();
+        if (!chooser.isOK()) {
+            return emptyList();
+        }
+
+        // return the chosen fields as a list of field names
+        List<PsiFieldMember> selectedMembers =
+            requireNonNull(chooser.getSelectedElements());
+        return selectedMembers.stream().
+            map(i -> i.getElement().getName()).
+            toList();
     }
 
-    // return the chosen fields as a list of field names
-    List<PsiFieldMember> selectedMembers =
-      requireNonNull(chooser.getSelectedElements());
-    return selectedMembers.stream().
-      map(i->i.getElement().getName()).
-      toList();
-  }
+    public static List<String> mapRecordComponentNames(
+        PsiClass recordClass
+    ) {
+        return BuilderGenerator.getComponents(recordClass).stream().
+            map(PsiRecordComponent::getName).
+            toList();
+    }
 
-  public static List<String> mapRecordComponentNames(
-    PsiClass recordClass
-  ) {
-    return BuilderGenerator.getComponents(recordClass).stream().
-      map(PsiRecordComponent::getName).
-      toList();
-  }
+    /**
+     * Return all fields of the given class as "members".
+     * Chooser has its own "Member" abstraction wrapped around the PSI types.
+     */
+    public static List<PsiFieldMember> mapAllFieldMembers(
+        PsiClass psiClass
+    ) {
+        return stream(psiClass.getAllFields()).
+            map(PsiFieldMember::new).
+            toList();
+    }
 
-  /**
-   Return all fields of the given class as "members".
-   Chooser has its own "Member" abstraction wrapped around the PSI types.
-   */
-  public static List<PsiFieldMember> mapAllFieldMembers(
-    PsiClass psiClass
-  ) {
-    return stream(psiClass.getAllFields()).
-      map(PsiFieldMember::new).
-      toList();
-  }
-
-  /**
-   Defines fields should be selected by default.
-   */
-  public static boolean isDefaultSelection(PsiFieldMember field) {
-    return !field.getElement().getName().equals("serialVersionUID");
-  }
+    /**
+     * Defines fields should be selected by default.
+     */
+    public static boolean isDefaultSelection(PsiFieldMember field) {
+        return !field.getElement().getName().equals("serialVersionUID");
+    }
 
 }

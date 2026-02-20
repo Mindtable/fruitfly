@@ -7,23 +7,24 @@ import fruitfly.test.FruitflyTestCase;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- a file with multiple top level classes and one record smooshed in between them
+ * a file with multiple top level classes and one record smooshed in between them
  */
 public class MultipleTopLevelRecordTest extends FruitflyTestCase {
-  private static final Logger log = Logger.getInstance(
-    MultipleTopLevelRecordTest.class);
 
-  public void testMultipleClasses() {
-    var inputJava = getTestPsiJavaFile("MultipleTopLevelTestInput.java");
-    var outputText = getTestPsiTextFile("MultipleTopLevelTestOutput.txt");
+    private static final Logger log = Logger.getInstance(
+        MultipleTopLevelRecordTest.class);
 
-    var recordClass = inputJava.getClasses()[1];
-    WriteCommandAction.runWriteCommandAction(inputJava.getProject(), ()->{
-      BuilderGenerator.generateBuilderPattern(recordClass);
-    });
+    public void testMultipleClasses() {
+        var inputJava = getTestPsiJavaFile("fruitfly/psi/multiple_top_level_record/MultipleTopLevelTestInput.java");
+        var outputText = getTestPsiTextFile("fruitfly/psi/multiple_top_level_record/MultipleTopLevelTestOutput.txt");
 
-    log.info("generated: " + inputJava.getText());
-    assertThat(inputJava.getText()).isEqualTo(outputText.getText());
-  }
+        var recordClass = inputJava.getClasses()[1];
+        WriteCommandAction.runWriteCommandAction(inputJava.getProject(), () -> {
+            BuilderGenerator.generateBuilderPattern(recordClass);
+        });
+
+        log.info("generated: " + inputJava.getText());
+        assertThat(inputJava.getText()).isEqualTo(outputText.getText());
+    }
 
 }

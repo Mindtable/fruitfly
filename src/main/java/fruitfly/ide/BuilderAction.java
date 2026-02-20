@@ -20,102 +20,101 @@ import java.util.List;
 import static com.intellij.psi.util.PsiTreeUtil.getParentOfType;
 
 /**
- Defines the `Fruitfly Builder` item in the generate menu.
+ * Defines the `Fruitfly Builder` item in the generate menu.
  */
 public class BuilderAction extends AnAction {
-  private static final Logger log = Logger.getInstance(BuilderAction.class);
 
+    private static final Logger log = Logger.getInstance(BuilderAction.class);
 
-  @Override
-  public @NotNull ActionUpdateThread getActionUpdateThread() {
-    return ActionUpdateThread.BGT;
-  }
-
-  /**
-   defines the visibility (item is only visible when you
-   have a record selected)
-   */
-  @Override
-  public void update(@NotNull AnActionEvent event) {
-    // log.warn("update()");
-    Project project = event.getProject();
-    Editor editor = event.getData(CommonDataKeys.EDITOR);
-    if( project == null || editor == null ){
-      event.getPresentation().setEnabledAndVisible(false);
-      return;
+    @Override
+    public @NotNull ActionUpdateThread getActionUpdateThread() {
+        return ActionUpdateThread.BGT;
     }
 
-    if( !ApplicationManager.getApplication().isReadAccessAllowed() ){
+    /**
+     * defines the visibility (item is only visible when you
+     * have a record selected)
+     */
+    @Override
+    public void update(@NotNull AnActionEvent event) {
+        // log.warn("update()");
+        Project project = event.getProject();
+        Editor editor = event.getData(CommonDataKeys.EDITOR);
+        if (project == null || editor == null) {
+            event.getPresentation().setEnabledAndVisible(false);
+            return;
+        }
+
+        if (!ApplicationManager.getApplication().isReadAccessAllowed()) {
       /* this branch was added when I was trying something else,
         logging it to see when it actually happens, if ever? */
-      log.info("readAccessAllowed=false");
-      event.getPresentation().setEnabledAndVisible(false);
-      return;
+            log.info("readAccessAllowed=false");
+            event.getPresentation().setEnabledAndVisible(false);
+            return;
+        }
+
+        event.getPresentation().setEnabledAndVisible(isRecord(event) != null);
     }
 
-    event.getPresentation().setEnabledAndVisible(isRecord(event) != null);
-  }
+    /**
+     * displays a member chooser for use to select which fields the builder
+     * should use, then generates the builder code
+     */
+    @Override
+    public void actionPerformed(@NotNull AnActionEvent event) {
 
-  /**
-   displays a member chooser for use to select which fields the builder
-   should use, then generates the builder code
-   */
-  @Override
-  public void actionPerformed(@NotNull AnActionEvent event) {
+        Project project = event.getProject();
+        Editor editor = event.getData(CommonDataKeys.EDITOR);
+        if (project == null || editor == null) {
+            log.warn("actionPerformed() no project or editor");
+            return;
+        }
 
-    Project project = event.getProject();
-    Editor editor = event.getData(CommonDataKeys.EDITOR);
-    if( project == null || editor == null ){
-      log.warn("actionPerformed() no project or editor");
-      return;
+        var recordClass = isRecord(event);
+        if (recordClass == null) {
+            log.warn("actionPerformed() when not a record");
+            return;
+        }
+
+        List<String> fields = RecordMemberChooser.chooseFieldNames(recordClass);
+
+        WriteCommandAction.runWriteCommandAction(recordClass.getProject(), () -> {
+            BuilderGenerator.generateBuilderPattern(recordClass, fields);
+        });
+
     }
 
-    var recordClass = isRecord(event);
-    if( recordClass == null ){
-      log.warn("actionPerformed() when not a record");
-      return;
+    /**
+     * use of PSI_FILE in update() method requires updateThread = BGT
+     */
+    private static PsiClass isRecord(@NotNull AnActionEvent event) {
+        Project project = event.getProject();
+        Editor editor = event.getData(CommonDataKeys.EDITOR);
+        if (project == null || editor == null) {
+            return null;
+        }
+
+        PsiFile file = event.getData(CommonDataKeys.PSI_FILE);
+        if (file == null) {
+            return null;
+        }
+
+        PsiElement elementAtCaret = file.findElementAt(
+            editor.getCaretModel().getOffset());
+        if (elementAtCaret == null) {
+            return null;
+        }
+
+        PsiClass psiClass = getParentOfType(elementAtCaret, PsiClass.class, false);
+        if (psiClass == null) {
+            return null;
+        }
+
+        if (!psiClass.isRecord()) {
+            return null;
+        }
+
+        return psiClass;
     }
-
-    List<String> fields = RecordMemberChooser.chooseFieldNames(recordClass);
-
-    WriteCommandAction.runWriteCommandAction(recordClass.getProject(), ()->{
-      BuilderGenerator.generateBuilderPattern(recordClass, fields);
-    });
-
-  }
-
-  /**
-   use of PSI_FILE in update() method requires updateThread = BGT
-   */
-  private static PsiClass isRecord(@NotNull AnActionEvent event) {
-    Project project = event.getProject();
-    Editor editor = event.getData(CommonDataKeys.EDITOR);
-    if( project == null || editor == null ){
-      return null;
-    }
-
-    PsiFile file = event.getData(CommonDataKeys.PSI_FILE);
-    if( file == null ){
-      return null;
-    }
-
-    PsiElement elementAtCaret = file.findElementAt(
-      editor.getCaretModel().getOffset());
-    if( elementAtCaret == null ){
-      return null;
-    }
-
-    PsiClass psiClass = getParentOfType(elementAtCaret, PsiClass.class, false);
-    if( psiClass == null ){
-      return null;
-    }
-
-    if( !psiClass.isRecord() ){
-      return null;
-    }
-
-    return psiClass;
-  }
-
 
 }
