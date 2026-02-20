@@ -2,8 +2,11 @@ package fruitfly.ide;
 
 import com.intellij.codeInsight.generation.PsiFieldMember;
 import com.intellij.ide.util.MemberChooser;
+import com.intellij.navigation.NavigationItem;
 import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiMember;
 import com.intellij.psi.PsiRecordComponent;
+import com.intellij.psi.PsiVariable;
 import fruitfly.psi.BuilderGenerator;
 
 import java.util.List;
@@ -12,17 +15,16 @@ import static java.util.Arrays.stream;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 
-public class RecordMemberChooser {
+public class ClassMemberChooser {
 
     /**
      * Displays the confirmation dialog where users can choose what fields to
      * generate.
      */
     public static List<String> chooseFieldNames(PsiClass recordClass) {
-        List<PsiFieldMember> members =
-            RecordMemberChooser.mapAllFieldMembers(recordClass);
+        final var members = mapAllFieldMembers(recordClass);
 
-        MemberChooser<PsiFieldMember> chooser = new MemberChooser<>(
+        final var chooser = new MemberChooser<>(
             members.toArray(PsiFieldMember[]::new),
             false, // allowEmptySelection
             true,  // allowMultiSelection
@@ -32,7 +34,7 @@ public class RecordMemberChooser {
         chooser.setCopyJavadocVisible(false);
         chooser.selectElements(
             members.stream().
-                filter(RecordMemberChooser::isDefaultSelection).
+                filter(ClassMemberChooser::isDefaultSelection).
                 toArray(PsiFieldMember[]::new)
         );
         chooser.setTitle("Select Fields to Be Available in Builder");
@@ -43,7 +45,7 @@ public class RecordMemberChooser {
         }
 
         // return the chosen fields as a list of field names
-        List<PsiFieldMember> selectedMembers =
+        final var selectedMembers =
             requireNonNull(chooser.getSelectedElements());
         return selectedMembers.stream().
             map(i -> i.getElement().getName()).
@@ -53,9 +55,13 @@ public class RecordMemberChooser {
     public static List<String> mapRecordComponentNames(
         PsiClass recordClass
     ) {
-        return BuilderGenerator.getComponents(recordClass).stream().
-            map(PsiRecordComponent::getName).
-            toList();
+        final var variables = recordClass.isRecord()
+                              ? recordClass.getRecordComponents()
+                              : recordClass.getFields();
+
+        return stream(variables)
+            .map(PsiVariable::getName)
+            .toList();
     }
 
     /**

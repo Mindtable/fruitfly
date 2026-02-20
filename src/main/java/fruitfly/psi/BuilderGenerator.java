@@ -7,16 +7,16 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiJavaFile;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiRecordComponent;
+import com.intellij.psi.PsiVariable;
 import com.intellij.psi.codeStyle.JavaCodeStyleManager;
 import com.intellij.psi.search.GlobalSearchScope;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.StringJoiner;
 
 import static com.intellij.openapi.util.text.StringUtil.decapitalize;
-import static fruitfly.ide.RecordMemberChooser.mapRecordComponentNames;
+import static fruitfly.ide.ClassMemberChooser.mapRecordComponentNames;
 import static java.util.Arrays.stream;
 
 public class BuilderGenerator {
@@ -29,8 +29,6 @@ public class BuilderGenerator {
         PsiClass recordClass,
         List<String> selectFieldNames
     ) {
-        assert recordClass.isRecord() :
-            "this implementation is designed only for records";
         final var selectedFields = mapNamesToFields(recordClass, selectFieldNames);
 
         removeBuilderClasses(recordClass);
@@ -49,7 +47,7 @@ public class BuilderGenerator {
     @NotNull
     public static PsiClass createBuilderClass(
         PsiClass recordClass,
-        PsiRecordComponent[] components
+        PsiVariable[] components
     ) {
         final var elementFactory =
             JavaPsiFacade.getElementFactory(recordClass.getProject());
@@ -110,7 +108,7 @@ public class BuilderGenerator {
     }
 
     public static String createFieldDeclaration(
-        PsiRecordComponent component
+        PsiVariable component
     ) {
         final var fieldName = component.getName();
         final var type = component.getType();
@@ -119,11 +117,11 @@ public class BuilderGenerator {
         // Проверяем, является ли тип классом (а не примитивом или массивом)
         var isOptional = false;
         if (type instanceof PsiClassType classType) {
-            // Разрешаем тип до конкретного PsiClass
-            final var resolvedClass = classType.resolve();
+            // Берем сырой тип (стираем дженерики) без обращения к индексам и resolve()
+            final var rawClassName = classType.rawType().getCanonicalText();
 
-            // Сравниваем Qualified Name (оно всегда чистое, без дженериков и аннотаций)
-            if (resolvedClass != null && "java.util.Optional".equals(resolvedClass.getQualifiedName())) {
+            // Проверяем и полное имя (для production), и короткое (для тестов без JDK)
+            if ("java.util.Optional".equals(rawClassName) || "Optional".equals(rawClassName)) {
                 isOptional = true;
             }
         }
@@ -149,34 +147,6 @@ public class BuilderGenerator {
         return "public static Builder " + methodName + "() {" +
             "return new Builder();" +
             "}";
-    }
-
-    public static PsiMethod createButMethod(
-        PsiClass recordClass,
-        PsiRecordComponent[] components
-    ) {
-        final var elementFactory =
-            JavaPsiFacade.getElementFactory(recordClass.getProject());
-
-        final var text = new StringBuilder(
-            "public Builder but() {");
-        text.append("return new Builder()");
-
-        for (final var component : components) {
-            final var fieldName = component.getName();
-            text.append(".")
-                .append(fieldName)
-                .append("(")
-                .append(fieldName)
-                .append(")");
-        }
-
-        text.append(";");
-        text.append("}");
-
-        return elementFactory.createMethodFromText(
-            text.toString(),
-            recordClass);
     }
 
     /**
@@ -217,17 +187,21 @@ public class BuilderGenerator {
     }
 
     /**
-     * Maps the given fieldNames to an array of PSI objects that they represent on
-     * the recordClass.
+     * Maps the given fieldNames to an array of PSI objects (Fields or Record Components)
      */
     @NotNull
-    public static PsiRecordComponent[] mapNamesToFields(
-        PsiClass recordClass,
+    public static PsiVariable[] mapNamesToFields(
+        PsiClass targetClass,
         List<String> selectFieldNames
     ) {
-        return stream(recordClass.getRecordComponents()).
-            filter(i -> selectFieldNames.contains(i.getName())).
-            toArray(PsiRecordComponent[]::new);
+        // Получаем либо компоненты рекорда, либо поля обычного класса
+        final var variables = targetClass.isRecord()
+                              ? targetClass.getRecordComponents()
+                              : targetClass.getFields();
+
+        return stream(variables)
+            .filter(i -> selectFieldNames.contains(i.getName()))
+            .toArray(PsiVariable[]::new);
     }
 
     /**
@@ -282,12 +256,8 @@ public class BuilderGenerator {
     ) {
         generateBuilderPattern(
             recordClass,
-            mapRecordComponentNames(recordClass));
-    }
-
-    public static @NotNull List<PsiRecordComponent>
-    getComponents(@NotNull PsiClass recordClass) {
-        return Arrays.asList(recordClass.getRecordComponents());
+            mapRecordComponentNames(recordClass)
+        );
     }
 
 }

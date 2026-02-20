@@ -1,14 +1,16 @@
 package fruitfly.psi.simple_record;
 
-public record SimpleRecordTestInput(String field1) {
+import static java.util.Optional.empty;
+
+public record SimpleRecordTestInput(Optional<String> field1) {
     public static final class Builder {
-        private String field1;
+        private Optional<String> field1 = empty();
 
         public static Builder simpleRecordTestInput() {
             return new Builder();
         }
 
-        public Builder field1(String field1) {
+        public Builder field1(Optional<String> field1) {
             this.field1 = field1;
             return this;
         }

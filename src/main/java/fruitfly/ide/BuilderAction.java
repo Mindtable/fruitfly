@@ -7,17 +7,14 @@ import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.editor.Editor;
-import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiFile;
 import fruitfly.psi.BuilderGenerator;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
-
+import static com.intellij.openapi.command.WriteCommandAction.runWriteCommandAction;
 import static com.intellij.psi.util.PsiTreeUtil.getParentOfType;
+import static fruitfly.ide.ClassMemberChooser.chooseFieldNames;
+import static fruitfly.psi.BuilderGenerator.generateBuilderPattern;
 
 /**
  * Defines the `Fruitfly Builder` item in the generate menu.
@@ -38,8 +35,8 @@ public class BuilderAction extends AnAction {
     @Override
     public void update(@NotNull AnActionEvent event) {
         // log.warn("update()");
-        Project project = event.getProject();
-        Editor editor = event.getData(CommonDataKeys.EDITOR);
+        final var project = event.getProject();
+        final var editor = event.getData(CommonDataKeys.EDITOR);
         if (project == null || editor == null) {
             event.getPresentation().setEnabledAndVisible(false);
             return;
@@ -56,56 +53,58 @@ public class BuilderAction extends AnAction {
         event.getPresentation().setEnabledAndVisible(isRecord(event) != null);
     }
 
-    /**
-     * displays a member chooser for use to select which fields the builder
-     * should use, then generates the builder code
-     */
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
+        final var project = event.getProject();
+        final var editor = event.getData(CommonDataKeys.EDITOR);
+        final var psiFile = event.getData(CommonDataKeys.PSI_FILE);
 
-        Project project = event.getProject();
-        Editor editor = event.getData(CommonDataKeys.EDITOR);
-        if (project == null || editor == null) {
-            log.warn("actionPerformed() no project or editor");
+        if (project == null || editor == null || psiFile == null) {
+            log.warn("actionPerformed() no project, editor or file");
             return;
         }
 
-        var recordClass = isRecord(event);
-        if (recordClass == null) {
-            log.warn("actionPerformed() when not a record");
+        // Ищем элемент под курсором и находим ближайший к нему класс (PsiClass)
+        final var element = psiFile.findElementAt(editor.getCaretModel().getOffset());
+        final var targetClass = getParentOfType(element, PsiClass.class);
+
+        if (targetClass == null || targetClass.isEnum() || targetClass.isInterface()) {
+            log.warn("actionPerformed() valid class not found or it's an enum/interface");
             return;
         }
 
-        List<String> fields = RecordMemberChooser.chooseFieldNames(recordClass);
+        // Если у вас RecordMemberChooser жестко завязан на PsiRecordComponent,
+        // вам нужно будет его немного переписать, чтобы он принимал PsiClass
+        // и извлекал поля (getFields()) или компоненты (getRecordComponents())
+        final var fields = chooseFieldNames(targetClass);
 
-        WriteCommandAction.runWriteCommandAction(recordClass.getProject(), () -> {
-            BuilderGenerator.generateBuilderPattern(recordClass, fields);
+        runWriteCommandAction(project, () -> {
+            generateBuilderPattern(targetClass, fields);
         });
-
     }
 
     /**
      * use of PSI_FILE in update() method requires updateThread = BGT
      */
     private static PsiClass isRecord(@NotNull AnActionEvent event) {
-        Project project = event.getProject();
-        Editor editor = event.getData(CommonDataKeys.EDITOR);
+        final var project = event.getProject();
+        final var editor = event.getData(CommonDataKeys.EDITOR);
         if (project == null || editor == null) {
             return null;
         }
 
-        PsiFile file = event.getData(CommonDataKeys.PSI_FILE);
+        final var file = event.getData(CommonDataKeys.PSI_FILE);
         if (file == null) {
             return null;
         }
 
-        PsiElement elementAtCaret = file.findElementAt(
+        final var elementAtCaret = file.findElementAt(
             editor.getCaretModel().getOffset());
         if (elementAtCaret == null) {
             return null;
         }
 
-        PsiClass psiClass = getParentOfType(elementAtCaret, PsiClass.class, false);
+        final var psiClass = getParentOfType(elementAtCaret, PsiClass.class, false);
         if (psiClass == null) {
             return null;
         }

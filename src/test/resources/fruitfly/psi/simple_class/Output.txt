@@ -1,0 +1,36 @@
+import static java.util.Optional.empty;
+
+public final class Input {
+    private final String field1;
+    private final int field2;
+    private final Optional<Object> oField3;
+
+    public static final class Builder {
+        private String field1;
+        private int field2;
+        private Optional<Object> oField3 = empty();
+
+        public static Builder input() {
+            return new Builder();
+        }
+
+        public Builder field1(String field1) {
+            this.field1 = field1;
+            return this;
+        }
+
+        public Builder field2(int field2) {
+            this.field2 = field2;
+            return this;
+        }
+
+        public Builder oField3(Optional<Object> oField3) {
+            this.oField3 = oField3;
+            return this;
+        }
+
+        public Input build() {
+            return new Input(this.field1, this.field2, this.oField3);
+        }
+    }
+}
