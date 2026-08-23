@@ -1,6 +1,7 @@
 package fruitfly.psi.regenerated_record;
 
 /** record comment */
+@OuterOnly("record")
 public record RegenerateRecordTestInput(
   // note that the type of field 1 has changed
   int field1,
@@ -25,6 +26,8 @@ public record RegenerateRecordTestInput(
     // before the nested class
   }
 
+  @Deprecated(forRemoval = true, since = "1.0")
+  @SuppressWarnings({"unused", "rawtypes"})
   public static class Builder {
     private String field1;
 
@@ -38,4 +41,8 @@ public record RegenerateRecordTestInput(
     // simulates a method that the user added at the bottom of the record
   }
   // bottom body comment
+}
+
+@interface OuterOnly {
+  String value();
 }

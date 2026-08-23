@@ -14,7 +14,7 @@ public class RegenerateRecordTest extends FruitflyTestCase {
 
     private static final Logger log = Logger.getInstance(RegenerateRecordTest.class);
 
-    public void testRegenerate() {
+    public void testRegeneratePreservesBuilderAnnotations() {
         var inputJava = getTestPsiJavaFile("fruitfly/psi/regenerated_record/RegenerateRecordTestInput.java");
         var outputText = getTestPsiTextFile("fruitfly/psi/regenerated_record/RegenerateRecordTestOutput.txt");
 
@@ -29,4 +29,3 @@ public class RegenerateRecordTest extends FruitflyTestCase {
     }
 
 }
-

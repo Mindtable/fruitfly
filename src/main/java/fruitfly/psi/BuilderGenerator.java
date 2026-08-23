@@ -44,12 +44,13 @@ public class BuilderGenerator {
     ) {
         final var selectedFields = mapNamesToFields(recordClass, selectFieldNames);
         final var insertionAnchor = findInsertionAnchor(recordClass, pointerOffset);
+        final var replacementBuilder = createBuilderClass(recordClass, selectedFields);
 
         removeBuilderClasses(recordClass);
 
         // create builder pattern structures and add them to the record
         final var builderClass = recordClass.addBefore(
-            createBuilderClass(recordClass, selectedFields),
+            replacementBuilder,
             insertionAnchor);
 
         formatRecordCode(recordClass, builderClass);
@@ -98,8 +99,9 @@ public class BuilderGenerator {
         final var elementFactory =
             JavaPsiFacade.getElementFactory(recordClass.getProject());
 
-        final var text = new StringBuilder(
-            "public static final class Builder {");
+        final var text = new StringBuilder();
+        appendBuilderAnnotations(recordClass, text);
+        text.append("public static final class Builder {");
 
         // define fields
         for (final var component : components) {
@@ -154,6 +156,22 @@ public class BuilderGenerator {
          class for the inner class, we don't care about that - so dig out the
          Builder class and return it */
         return dummyClass.getInnerClasses()[0];
+    }
+
+    private static void appendBuilderAnnotations(
+        PsiClass recordClass,
+        StringBuilder text
+    ) {
+        for (final var innerClass : recordClass.getInnerClasses()) {
+            if (!"Builder".equals(innerClass.getName())) {
+                continue;
+            }
+
+            for (final var annotation : innerClass.getAnnotations()) {
+                text.append(annotation.getText()).append("\n");
+            }
+            return;
+        }
     }
 
     public static String createFieldDeclaration(
