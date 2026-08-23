@@ -33,13 +33,21 @@ public class BuilderGenerator {
 
         removeBuilderClasses(recordClass);
 
-        // denotes the `}` token that declares the end of the class
-        final var endOfClass = recordClass.getLastChild();
+        // Ищем подходящий якорь для вставки (первый метод или конец класса)
+        var insertionAnchor = recordClass.getLastChild(); // По умолчанию - конец класса
+
+        // Проходим по всем физическим элементам внутри класса сверху вниз
+        for (final var child : recordClass.getChildren()) {
+            if (child instanceof PsiMethod) {
+                insertionAnchor = child;
+                break; // Нашли первый реальный метод, останавливаемся
+            }
+        }
 
         // create builder pattern structures and add them to the record
         final var builderClass = recordClass.addBefore(
             createBuilderClass(recordClass, selectedFields),
-            endOfClass);
+            insertionAnchor);
 
         formatRecordCode(recordClass, builderClass);
     }
@@ -61,6 +69,7 @@ public class BuilderGenerator {
         }
 
         text.append("\n");
+        text.append(createPrivateConstructor());
         text.append(createBuilderMethod(recordClass));
 
         // define setters
@@ -129,6 +138,10 @@ public class BuilderGenerator {
         final var postfix = isOptional ? " = java.util.Optional.empty()" : "";
 
         return "private " + fieldTypeString + " " + fieldName + postfix + ";";
+    }
+
+    public static String createPrivateConstructor() {
+        return "private Builder() {\n}";
     }
 
     public static String createBuilderMethod(

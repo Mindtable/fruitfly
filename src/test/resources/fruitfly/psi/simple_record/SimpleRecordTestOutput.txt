@@ -6,6 +6,9 @@ public record SimpleRecordTestInput(Optional<String> field1) {
     public static final class Builder {
         private Optional<String> field1 = empty();
 
+        private Builder() {
+        }
+
         public static Builder simpleRecordTestInput() {
             return new Builder();
         }

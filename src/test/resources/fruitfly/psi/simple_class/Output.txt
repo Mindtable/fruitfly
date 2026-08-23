@@ -10,6 +10,9 @@ public final class Input {
         private int field2;
         private Optional<Object> oField3 = empty();
 
+        private Builder() {
+        }
+
         public static Builder input() {
             return new Builder();
         }

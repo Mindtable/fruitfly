@@ -5,10 +5,8 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.psi.PsiClass;
-import fruitfly.psi.BuilderGenerator;
 import org.jetbrains.annotations.NotNull;
 
 import static com.intellij.openapi.command.WriteCommandAction.runWriteCommandAction;
@@ -30,7 +28,7 @@ public class BuilderAction extends AnAction {
 
     /**
      * defines the visibility (item is only visible when you
-     * have a record selected)
+     * have a valid class or record selected)
      */
     @Override
     public void update(@NotNull AnActionEvent event) {
@@ -43,14 +41,15 @@ public class BuilderAction extends AnAction {
         }
 
         if (!ApplicationManager.getApplication().isReadAccessAllowed()) {
-      /* this branch was added when I was trying something else,
-        logging it to see when it actually happens, if ever? */
+            /* this branch was added when I was trying something else,
+               logging it to see when it actually happens, if ever? */
             log.info("readAccessAllowed=false");
             event.getPresentation().setEnabledAndVisible(false);
             return;
         }
 
-        event.getPresentation().setEnabledAndVisible(isRecord(event) != null);
+        // Используем новый метод, который ищет подходящий класс
+        event.getPresentation().setEnabledAndVisible(getValidTargetClass(event) != null);
     }
 
     @Override
@@ -68,14 +67,11 @@ public class BuilderAction extends AnAction {
         final var element = psiFile.findElementAt(editor.getCaretModel().getOffset());
         final var targetClass = getParentOfType(element, PsiClass.class);
 
-        if (targetClass == null || targetClass.isEnum() || targetClass.isInterface()) {
+        if (targetClass == null || targetClass.isEnum() || targetClass.isInterface() || targetClass.isAnnotationType()) {
             log.warn("actionPerformed() valid class not found or it's an enum/interface");
             return;
         }
 
-        // Если у вас RecordMemberChooser жестко завязан на PsiRecordComponent,
-        // вам нужно будет его немного переписать, чтобы он принимал PsiClass
-        // и извлекал поля (getFields()) или компоненты (getRecordComponents())
         final var fields = chooseFieldNames(targetClass);
 
         runWriteCommandAction(project, () -> {
@@ -84,9 +80,11 @@ public class BuilderAction extends AnAction {
     }
 
     /**
+     * Finds a valid PsiClass (record or standard class) under the caret.
+     * Rejects interfaces, enums, and annotations.
      * use of PSI_FILE in update() method requires updateThread = BGT
      */
-    private static PsiClass isRecord(@NotNull AnActionEvent event) {
+    private static PsiClass getValidTargetClass(@NotNull AnActionEvent event) {
         final var project = event.getProject();
         final var editor = event.getData(CommonDataKeys.EDITOR);
         if (project == null || editor == null) {
@@ -98,8 +96,7 @@ public class BuilderAction extends AnAction {
             return null;
         }
 
-        final var elementAtCaret = file.findElementAt(
-            editor.getCaretModel().getOffset());
+        final var elementAtCaret = file.findElementAt(editor.getCaretModel().getOffset());
         if (elementAtCaret == null) {
             return null;
         }
@@ -109,11 +106,12 @@ public class BuilderAction extends AnAction {
             return null;
         }
 
-        if (!psiClass.isRecord()) {
+        // Отсекаем интерфейсы, enum и аннотации. 
+        // Если это обычный class или record - возвращаем его.
+        if (psiClass.isInterface() || psiClass.isEnum() || psiClass.isAnnotationType()) {
             return null;
         }
 
         return psiClass;
     }
-
 }

@@ -78,8 +78,6 @@ that is actually much more likely to need maintenance over time because I'd
 guess IDEA has to keep changing that stuff a lot (likely a lot more than
 the plugin system interface itself).
 
-See [2024-02-08-use-idea-psi-api.md](./adr/2024-02-08-use-idea-psi-api.md)
-
 
 ## Benefits of using a project-specific plugin
 

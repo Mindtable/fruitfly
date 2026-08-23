@@ -1,9 +1,12 @@
+import org.gradle.api.tasks.compile.JavaCompile
+import org.gradle.api.tasks.wrapper.Wrapper
+
 plugins {
-  id 'java'
-  id 'org.jetbrains.intellij' version '1.17.1'
+  java
+  id("org.jetbrains.intellij") version "1.17.1"
 }
 
-println 'Gradle build launched with Java version: ' + JavaVersion.current()
+println("Gradle build launched with Java version: ${JavaVersion.current()}")
 
 repositories {
   mavenCentral()
@@ -12,70 +15,68 @@ repositories {
 dependencies {
   /* see doc/adr/2024-02-10-use-junit4.md
     https://github.com/junit-team/junit4/releases */
-  testImplementation 'junit:junit:4.13.2'
+  testImplementation("junit:junit:4.13.2")
 
   /* I just like assertj assertions much better than junit or hamcrest.
     https://github.com/assertj/assertj/releases */
-  testImplementation 'org.assertj:assertj-core:3.25.3'
+  testImplementation("org.assertj:assertj-core:3.25.3")
 }
 
 intellij {
-  /* controls what version we'll build and test against, but actual
-  /* controls what version we'll build and test against, but actual
-  /* controls what version we'll build and test against, but actual
+  /* controls what version we"ll build and test against, but actual
     compatibility with IDEA versions is defined in patchPluginXml. */
-  version = '2024.1'
+  version.set("2024.1")
 
-  /* doesn't seem to work, see plugin-development.md */
-  downloadSources = true
+  /* doesn"t seem to work, see plugin-development.md */
+  downloadSources.set(true)
 
   /* community is smaller, less features - so faster startup when testing */
-  type = 'IC'
+  type.set("IC")
 
   /* controls what libraries the gradle-intellij plugin will add do the
     dependencies list.  Needs to be kept in sync with plugin.xml */
-  plugins = ['com.intellij.java']
+  plugins.set(listOf("com.intellij.java"))
 }
 
 java {
   toolchain {
     /* fruitfly only targets the one specific IDEA version, no need for
       backward compatibility so no need to worry about supporting old JDKs */
-    languageVersion = JavaLanguageVersion.of(17)
-    vendor = JvmVendorSpec.JETBRAINS
+    languageVersion.set(JavaLanguageVersion.of(17))
+    vendor.set(JvmVendorSpec.JETBRAINS)
   }
 }
 
-tasks.withType(JavaCompile).configureEach {
-  options.compilerArgs = [
-    '--release', '17'
-  ]
+tasks.withType<JavaCompile>().configureEach {
+  options.compilerArgs = listOf(
+    "--release", "17"
+  )
 }
 
-runIde {
+tasks.named<JavaExec>("runIde") {
   /* redirect to stdout to avoid IDEA console coloring it red, also makes
     ordering of log messages in the console more consistent (stderr is
     un-buffered, stdout is buffered) */
   errorOutput = System.out
 }
 
-group 'fruitfly'
+group = "fruitfly"
 // this drives the version in plugin.xml, via the patchPluginXml task
-version '1.4'
+version = "1.4.2"
 
-patchPluginXml {
+tasks.patchPluginXml {
   /* Initially implemented against 2023.3. The plugin is assumed compatible
-   because we haven't changed usage of any APIs to anything that wouldn't be
+   because we haven"t changed usage of any APIs to anything that wouldn"t be
    available in 2023.3 */
-  sinceBuild = '233.0'
-  /* I've no intention of updating this every time a version is released; when
+  sinceBuild.set("233.0")
+  /* I"ve no intention of updating this every time a version is released; when
     it breaks, it breaks. */
-  untilBuild = '999.*'
+  untilBuild.set("999.*")
 }
 
 /* to upgrade, change the version below and run this task
   https://gradle.org/releases/ */
-tasks.named('wrapper') {
+tasks.named<Wrapper>("wrapper") {
   distributionType = Wrapper.DistributionType.ALL
-  gradleVersion = '8.5'
+  gradleVersion = "8.5"
 }

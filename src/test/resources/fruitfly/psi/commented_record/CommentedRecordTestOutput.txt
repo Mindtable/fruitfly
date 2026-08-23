@@ -10,6 +10,9 @@ public record CommentedRecordTestInput(
     public static final class Builder {
         private String field1;
 
+        private Builder() {
+        }
+
         public static Builder commentedRecordTestInput() {
             return new Builder();
         }

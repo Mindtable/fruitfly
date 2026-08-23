@@ -11,6 +11,9 @@ public class NestedRecordTestInput {
           private String field1;
           private String field2;
 
+          private Builder() {
+          }
+
           public static Builder sample() {
               return new Builder();
           }

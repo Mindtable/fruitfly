@@ -7,6 +7,9 @@ record RecordExample(String field1) {
     public static final class Builder {
         private String field1;
 
+        private Builder() {
+        }
+
         public static Builder recordExample() {
             return new Builder();
         }

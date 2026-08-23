@@ -9,19 +9,12 @@ public record RegenerateRecordTestInput(
 ) {
   /* top body comment */
 
-    public void userMiddleMethod(){
-    // simulates a method the user added by hand after instance methods but
-    // before the nested class
-  }
-
-    public void userBottomMethod(){
-    // simulates a method that the user added at the bottom of the record
-  }
-  // bottom body comment
-
     public static final class Builder {
         private int field1;
         private String field2;
+
+        private Builder() {
+        }
 
         public static Builder regenerateRecordTestInput() {
             return new Builder();
@@ -41,4 +34,14 @@ public record RegenerateRecordTestInput(
             return new RegenerateRecordTestInput(this.field1, this.field2);
         }
     }
+
+    public void userMiddleMethod(){
+    // simulates a method the user added by hand after instance methods but
+    // before the nested class
+  }
+
+    public void userBottomMethod(){
+    // simulates a method that the user added at the bottom of the record
+  }
+  // bottom body comment
 }
