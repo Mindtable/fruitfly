@@ -1,0 +1,31 @@
+package fruitfly.psi.builder_position;
+
+public record BuilderPositionTestInput(String value) {
+    public void beforePointer() {
+        System.out.println(value);
+    }
+
+    public static final class Builder {
+        private String value;
+
+        private Builder() {
+        }
+
+        public static Builder builderPositionTestInput() {
+            return new Builder();
+        }
+
+        public Builder value(String value) {
+            this.value = value;
+            return this;
+        }
+
+        public BuilderPositionTestInput build() {
+            return new BuilderPositionTestInput(this.value);
+        }
+    }
+
+    public void afterPointer() {
+        System.out.println(value);
+    }
+}

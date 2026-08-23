@@ -12,3 +12,5 @@
 
 # local stuff i do not want committed
 /local
+
+.intellijPlatform

@@ -64,7 +64,8 @@ public class BuilderAction extends AnAction {
         }
 
         // Ищем элемент под курсором и находим ближайший к нему класс (PsiClass)
-        final var element = psiFile.findElementAt(editor.getCaretModel().getOffset());
+        final var pointerOffset = editor.getCaretModel().getOffset();
+        final var element = psiFile.findElementAt(pointerOffset);
         final var targetClass = getParentOfType(element, PsiClass.class);
 
         if (targetClass == null || targetClass.isEnum() || targetClass.isInterface() || targetClass.isAnnotationType()) {
@@ -75,7 +76,7 @@ public class BuilderAction extends AnAction {
         final var fields = chooseFieldNames(targetClass);
 
         runWriteCommandAction(project, () -> {
-            generateBuilderPattern(targetClass, fields);
+            generateBuilderPattern(targetClass, fields, pointerOffset);
         });
     }
 

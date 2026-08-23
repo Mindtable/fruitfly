@@ -1,0 +1,25 @@
+package fruitfly.psi.set_field;
+
+import java.util.Set;
+
+public record SetFieldTestInput(Set<String> tags) {
+    public static final class Builder {
+        private Set<String> tags = Set.of();
+
+        private Builder() {
+        }
+
+        public static Builder setFieldTestInput() {
+            return new Builder();
+        }
+
+        public Builder tags(Set<String> tags) {
+            this.tags = Set.copyOf(tags);
+            return this;
+        }
+
+        public SetFieldTestInput build() {
+            return new SetFieldTestInput(this.tags);
+        }
+    }
+}

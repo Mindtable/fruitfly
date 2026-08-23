@@ -17,6 +17,9 @@ To customise the generated code:
 * edit [BuilderGenerator.java](src/main/java/fruitfly/psi/BuilderGenerator.java)
   and customise the generated code
 
+Generated output must continue to follow the
+[style requirements](doc/style-requirements.md).
+
 See [plugin-structure.md](./doc/plugin-structure.md) for quick summary of the project structure.
 
 

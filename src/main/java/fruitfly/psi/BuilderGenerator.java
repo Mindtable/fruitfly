@@ -5,6 +5,7 @@ import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiClassType;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiJavaFile;
+import com.intellij.psi.PsiMember;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiRecordComponent;
 import com.intellij.psi.PsiVariable;
@@ -29,20 +30,22 @@ public class BuilderGenerator {
         PsiClass recordClass,
         List<String> selectFieldNames
     ) {
+        generateBuilderPattern(
+            recordClass,
+            selectFieldNames,
+            defaultInsertionOffset(recordClass)
+        );
+    }
+
+    public static void generateBuilderPattern(
+        PsiClass recordClass,
+        List<String> selectFieldNames,
+        int pointerOffset
+    ) {
         final var selectedFields = mapNamesToFields(recordClass, selectFieldNames);
+        final var insertionAnchor = findInsertionAnchor(recordClass, pointerOffset);
 
         removeBuilderClasses(recordClass);
-
-        // Ищем подходящий якорь для вставки (первый метод или конец класса)
-        var insertionAnchor = recordClass.getLastChild(); // По умолчанию - конец класса
-
-        // Проходим по всем физическим элементам внутри класса сверху вниз
-        for (final var child : recordClass.getChildren()) {
-            if (child instanceof PsiMethod) {
-                insertionAnchor = child;
-                break; // Нашли первый реальный метод, останавливаемся
-            }
-        }
 
         // create builder pattern structures and add them to the record
         final var builderClass = recordClass.addBefore(
@@ -50,6 +53,41 @@ public class BuilderGenerator {
             insertionAnchor);
 
         formatRecordCode(recordClass, builderClass);
+    }
+
+    private static int defaultInsertionOffset(PsiClass recordClass) {
+        for (final var child : recordClass.getChildren()) {
+            if (child instanceof PsiMethod && !isRemovedByRegeneration(child)) {
+                return child.getTextRange().getStartOffset() - 1;
+            }
+        }
+        return recordClass.getTextRange().getEndOffset();
+    }
+
+    private static PsiElement findInsertionAnchor(
+        PsiClass recordClass,
+        int pointerOffset
+    ) {
+        for (final var child : recordClass.getChildren()) {
+            if (child instanceof PsiMember &&
+                !isRemovedByRegeneration(child) &&
+                child.getTextRange().getStartOffset() > pointerOffset) {
+                return child;
+            }
+        }
+        return recordClass.getLastChild();
+    }
+
+    private static boolean isRemovedByRegeneration(PsiElement element) {
+        if (element instanceof PsiClass psiClass) {
+            return "Builder".equals(psiClass.getName());
+        }
+        if (element instanceof PsiMethod method) {
+            return ("builder".equals(method.getName()) ||
+                "but".equals(method.getName())) &&
+                method.getParameterList().getParametersCount() == 0;
+        }
+        return false;
     }
 
     @NotNull
@@ -87,7 +125,9 @@ public class BuilderGenerator {
             text.append("this.")
                 .append(fieldName)
                 .append(" = ")
-                .append(fieldName)
+                .append(isSet(component)
+                        ? "java.util.Set.copyOf(" + fieldName + ")"
+                        : fieldName)
                 .append(";");
             text.append("return this;");
             text.append("}");
@@ -135,9 +175,20 @@ public class BuilderGenerator {
             }
         }
 
-        final var postfix = isOptional ? " = java.util.Optional.empty()" : "";
+        final var postfix = isOptional
+                            ? " = java.util.Optional.empty()"
+                            : isSet(component) ? " = java.util.Set.of()" : "";
 
         return "private " + fieldTypeString + " " + fieldName + postfix + ";";
+    }
+
+    private static boolean isSet(PsiVariable component) {
+        if (!(component.getType() instanceof PsiClassType classType)) {
+            return false;
+        }
+
+        final var rawClassName = classType.rawType().getCanonicalText();
+        return "java.util.Set".equals(rawClassName) || "Set".equals(rawClassName);
     }
 
     public static String createPrivateConstructor() {

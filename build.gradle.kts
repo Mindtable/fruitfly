@@ -62,7 +62,7 @@ tasks.named<JavaExec>("runIde") {
 
 group = "fruitfly"
 // this drives the version in plugin.xml, via the patchPluginXml task
-version = "1.4.2"
+version = "1.4.3"
 
 tasks.patchPluginXml {
   /* Initially implemented against 2023.3. The plugin is assumed compatible
